@@ -11,6 +11,7 @@ app.use(express.json());
 app.use(cors());
 
 const connections = {};
+const paintsData = [];
 
 app.ws('/canvas', (ws, req) => {
     const id = nanoid();
@@ -19,10 +20,10 @@ app.ws('/canvas', (ws, req) => {
     console.log('Total clients connected ' + Object.keys(connections).length);
 
     ws.on('message', (msg) => {
-
         Object.keys(connections).forEach(connectionId => {
            const connection = connections[connectionId];
-           connection.send(msg)
+           paintsData.push(JSON.parse(msg));
+           connection.send(JSON.stringify(paintsData));
         });
     });
 

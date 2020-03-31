@@ -12,12 +12,9 @@ class App extends Component {
     this.websocket.onmessage = (message) => {
       try {
       const data = JSON.parse(message.data);
-      if (data) {
-        this.setState({paints: [...this.state.paints, {
-            x: data.x,
-            y: data.y
-          }]})
-      }
+        if (data) {
+          this.setState({paints: data})
+        }
       } catch (error) {
         console.log(error);
       }
@@ -50,9 +47,6 @@ class App extends Component {
     return (
         <>
         <canvas width="1200" height="900" ref={this.canvas} onClick={this.onCanvasClick}/>
-          {this.state.paints.map(paint => {
-
-          })}
         </>
     )
   }
