@@ -3,6 +3,8 @@ import './App.css';
 
 class App extends Component {
 
+  canvas = createRef();
+
   state = {
     paints: []
   };
@@ -11,9 +13,22 @@ class App extends Component {
     this.websocket = new WebSocket('ws://localhost:8001/canvas');
     this.websocket.onmessage = (message) => {
       try {
-      const data = JSON.parse(message.data);
+        const data = JSON.parse(message.data);
         if (data) {
-          this.setState({paints: data})
+          switch (data.type) {
+            case 'NEW_ARRAY':
+              this.context = this.canvas.getContext('2d');
+              this.imageData = this.context.createImageData(1, 1);
+              this.d = this.imageData.data;
+
+              data.array.forEach((pixel) => {
+                this.context.putImageData(this.imageData, pixel.x, pixel.y);
+              });
+              break;
+            default:
+              break;
+          }
+
         }
       } catch (error) {
         console.log(error);
@@ -37,16 +52,26 @@ class App extends Component {
       x: x,
       y: y
     };
-    this.websocket.send(JSON.stringify(paint))
+    let points = [...this.state.paints];
+    points.push(paint);
+    this.setState({
+      paints: points
+    });
+    this.websocket.send(JSON.stringify({
+      type: 'PIXEL_ARRAY',
+      array: this.state.paints
+    }));
   };
-
-  canvas = createRef();
 
   render() {
     console.log(this.state.paints);
     return (
         <>
-        <canvas width="1200" height="900" ref={this.canvas} onClick={this.onCanvasClick}/>
+          <canvas ref={this.canvas}
+                  style={{border: '1px solid black'}}
+                  width={700}
+                  height={400}
+                  onClick={this.onCanvasClick}/>
         </>
     )
   }

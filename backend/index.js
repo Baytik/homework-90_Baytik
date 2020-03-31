@@ -10,8 +10,8 @@ const port = 8001;
 app.use(express.json());
 app.use(cors());
 
-const connections = {};
-const paintsData = [];
+let connections = {};
+let paintsData = [];
 
 app.ws('/canvas', (ws, req) => {
     const id = nanoid();
@@ -20,10 +20,40 @@ app.ws('/canvas', (ws, req) => {
     console.log('Total clients connected ' + Object.keys(connections).length);
 
     ws.on('message', (msg) => {
+
+        let decodedMessage;
+        try {
+            decodedMessage = JSON.parse(msg);
+        } catch (e) {
+            return ws.send(JSON.stringify({
+                type: 'ERROR',
+                message: 'Message is not JSON'
+            }))
+        }
+
+        switch (decodedMessage.type) {
+            case 'PIXEL_ARRAY':
+                paintsData = paintsData.concat(decodedMessage.array);
+                Object.values(connections).forEach(client => {
+                    client.send(JSON.stringify({
+                        type: 'NEW_ARRAY',
+                        array: paintsData
+                    }))
+                });
+                break;
+
+            default:
+                return ws.send(JSON.stringify({
+                    type: 'ERROR',
+                    message: 'Unknown message type'
+                }));
+        }
+
         Object.keys(connections).forEach(connectionId => {
-           const connection = connections[connectionId];
-           paintsData.push(JSON.parse(msg));
-           connection.send(JSON.stringify(paintsData));
+            const connection = connections[connectionId];
+            paintsData.push(JSON.parse(msg));
+            connection.send(JSON.stringify(paintsData));
+            console.log(paintsData)
         });
     });
 
