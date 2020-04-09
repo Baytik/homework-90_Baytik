@@ -1,0 +1,19 @@
+.register p {
+    font-size: 25px;
+    margin-bottom: 20px;
+}
+.register input {
+    font-size: 18px;
+    margin-top: 10px;
+    border: 2px solid black;
+    padding: 5px;
+}
+.register button {
+    font-size: 18px;
+    border: 2px solid black;
+    background: white;
+    cursor: pointer;
+    margin-top: 10px;
+    padding: 3px 7px;
+    margin-left: 8%;
+}

@@ -1,68 +1,30 @@
 const express = require('express');
 const cors = require('cors');
 const expressWs = require('express-ws');
-const {nanoid} = require('nanoid');
+const mongoose = require('mongoose');
+const config = require('./config');
+const users = require('./app/users');
+const chat = require('./app/chat');
 
 const app = express();
+const port = 8000;
 expressWs(app);
-const port = 8001;
 
 app.use(express.json());
 app.use(cors());
+app.use(express.static('public'));
 
-let connections = {};
-let paintsData = [];
+const run = async () => {
+  await mongoose.connect(config.database, config.databaseOptions);
 
-app.ws('/canvas', (ws, req) => {
-    const id = nanoid();
-    console.log('client connected=', id);
-    connections[id] = ws;
-    console.log('Total clients connected ' + Object.keys(connections).length);
+  app.use('/users', users);
+  app.ws('/chat', chat);
 
-    ws.on('message', (msg) => {
-
-        let decodedMessage;
-        try {
-            decodedMessage = JSON.parse(msg);
-        } catch (e) {
-            return ws.send(JSON.stringify({
-                type: 'ERROR',
-                message: 'Message is not JSON'
-            }))
-        }
-
-        switch (decodedMessage.type) {
-            case 'PIXEL_ARRAY':
-                paintsData = paintsData.concat(decodedMessage.array);
-                Object.values(connections).forEach(client => {
-                    client.send(JSON.stringify({
-                        type: 'NEW_ARRAY',
-                        array: paintsData
-                    }))
-                });
-                break;
-
-            default:
-                return ws.send(JSON.stringify({
-                    type: 'ERROR',
-                    message: 'Unknown message type'
-                }));
-        }
-
-        Object.keys(connections).forEach(connectionId => {
-            const connection = connections[connectionId];
-            paintsData.push(JSON.parse(msg));
-            connection.send(JSON.stringify(paintsData));
-            console.log(paintsData)
-        });
+    app.listen(port, () => {
+        console.log(`Server started on ${port} port!`);
     });
+};
 
-    ws.on('close', (msq) => {
-        console.log('Client disconnected id= ', id);
-        delete connections[id];
-    })
-});
-
-app.listen(port, () => {
-    console.log(`Server started on ${port} port!`);
+run().catch(e => {
+    console.error(e);
 });
